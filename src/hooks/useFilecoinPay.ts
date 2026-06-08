@@ -1,13 +1,14 @@
 "use client";
 
 import { useState, useCallback, useEffect } from "react";
-import { type Synapse, parseUnits, formatUnits } from "@filoz/synapse-sdk";
+import { type Synapse, parseUnits } from "@filoz/synapse-sdk";
+import { formatUnits } from "viem";
 
 export const USDFC_DECIMALS = 18;
 
 export function fmtUSDFC(n: bigint | null): string {
   if (n === null) return "—";
-  return Number(formatUnits(n, { decimals: USDFC_DECIMALS })).toFixed(4);
+  return Number(formatUnits(n, USDFC_DECIMALS)).toFixed(4);
 }
 
 export function useFilecoinPay(synapse: Synapse | null) {
