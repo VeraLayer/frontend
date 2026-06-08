@@ -2,12 +2,8 @@
 
 import { useState, useRef, useEffect } from "react";
 import { Settings, Upload } from "lucide-react";
+import Aside from "../components/Aside";
 
-const SIDEBAR_LINKS = [
-  { label: "Dashboard", href: "#", active: true },
-  { label: "Uploads", href: "#", active: false },
-  { label: "Archive", href: "#", active: false },
-];
 
 const ARCHIVE_TIERS = [
   {
@@ -67,35 +63,7 @@ export default function DashboardPage() {
       style={{ backgroundColor: "#0A0E1A", color: "#8A919F" }}
     >
       {/* Sidebar */}
-      <aside
-        className="w-20 md:w-[88px] flex-shrink-0 flex flex-col justify-between py-5 px-3 border-r"
-        style={{ borderColor: "rgba(255,255,255,0.06)" }}
-      >
-        <div className="flex flex-col gap-1">
-          {SIDEBAR_LINKS.map(({ label, href, active }) => (
-            <a
-              key={label}
-              href={href}
-              className="text-[11px] px-3 py-2 rounded-md transition-colors"
-              style={{
-                backgroundColor: active
-                  ? "rgba(26,146,255,0.15)"
-                  : "transparent",
-                color: active ? "#A4C9FF" : "#8A919F",
-              }}
-            >
-              {label}
-            </a>
-          ))}
-        </div>
-        <a
-          href="#"
-          className="text-[11px] px-3 py-2 rounded-md transition-colors hover:opacity-70"
-          style={{ color: "#8A919F" }}
-        >
-          Settings
-        </a>
-      </aside>
+      <Aside />
 
       {/* Main */}
       <main className="flex-1 p-6 flex flex-col gap-5 max-w-2xl">
