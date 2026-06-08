@@ -3,16 +3,20 @@
 import { useState } from "react";
 import { Search } from "lucide-react";
 import Navbar from "./Navbar";
-
-
-const STATS = [
-  { value: "2.4M", label: "ITEMS ARCHIVED" },
-  { value: "450K+", label: "HERITAGE NAMES", highlight: true },
-  { value: "1.2M", label: "VERIFIED EMAILS" },
-];
+import { useAssetsCount } from "@/hooks/useVeraLayer";
 
 export default function HeroSection() {
   const [query, setQuery] = useState("");
+  const { count, isLoading: countLoading } = useAssetsCount();
+
+  const STATS = [
+    {
+      value: countLoading ? "…" : count !== undefined ? count.toString() : "0",
+      label: "ITEMS ARCHIVED",
+    },
+    { value: "450K+", label: "HERITAGE NAMES", highlight: true },
+    { value: "1.2M", label: "VERIFIED EMAILS" },
+  ];
 
   return (
     <div
