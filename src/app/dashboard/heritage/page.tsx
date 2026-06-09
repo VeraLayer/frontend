@@ -6,15 +6,14 @@ import {
   Upload,
   Archive,
   Settings,
-  HelpCircle,
   Search,
   Star,
   GitBranch,
   Shield,
   Award,
-  ChevronRight,
-  Bookmark,
 } from "lucide-react";
+import Link from "next/link";
+import { ConnectButton } from "@rainbow-me/rainbowkit";
 import Aside from "@/app/components/Aside";
 
 const SIDEBAR_NAV = [
@@ -126,12 +125,7 @@ export default function HeritageAssetsPage() {
               </a>
             ))}
           </div>
-          <button
-            className="text-xs px-4 py-1.5 rounded-md font-medium"
-            style={{ backgroundColor: "#A4C9FF", color: "#0A0E1A" }}
-          >
-            Connect Wallet
-          </button>
+          <ConnectButton chainStatus="icon" showBalance={false} label="Connect Wallet" />
         </div>
 
         <div className="p-6">
@@ -185,12 +179,13 @@ export default function HeritageAssetsPage() {
               >
                 Filter
               </button>
-              <button
-                className="text-[10px] px-3 py-1.5 rounded-lg font-medium"
+              <Link
+                href="/dashboard/upload?vault=heritage"
+                className="text-[10px] px-3 py-1.5 rounded-lg font-medium transition-opacity hover:opacity-80"
                 style={{ backgroundColor: "#1A92FF", color: "#0A0E1A" }}
               >
                 Add CID
-              </button>
+              </Link>
             </div>
           </div>
 
@@ -357,12 +352,13 @@ export default function HeritageAssetsPage() {
                   ))}
                 </div>
 
-                <button
-                  className="w-full py-2 rounded-md text-xs font-medium transition-opacity hover:opacity-80 mt-auto"
+                <Link
+                  href="/dashboard/upload?vault=heritage"
+                  className="w-full py-2 rounded-md text-xs font-medium transition-opacity hover:opacity-80 mt-auto block text-center"
                   style={{ backgroundColor: "#1A92FF", color: "#0A0E1A" }}
                 >
                   Upload to Filecoin ↗
-                </button>
+                </Link>
               </div>
             </div>
           </div>
