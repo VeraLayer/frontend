@@ -1,4 +1,8 @@
-const NAV_LINKS = ["Archive", "Heritage", "Explore"];
+const NAV_LINKS = [
+  { label: "Archive", href: "/archive" },
+  { label: "Heritage", href: "/dashboard/heritage" },
+  { label: "Explore", href: "/explore" }
+];
 
 export default function Navbar() {
   return (
@@ -13,8 +17,8 @@ export default function Navbar() {
           <div className="hidden md:flex items-center gap-6">
             {NAV_LINKS.map((link, i) => (
               <a
-                key={link}
-                href="#"
+                key={link.href}
+                href={link.href}
                 className="text-xs tracking-wide transition-colors hover:opacity-80"
                 style={{
                   color: i === NAV_LINKS.length - 1 ? "#DFE2F3" : "#8A919F",
@@ -23,7 +27,7 @@ export default function Navbar() {
                   textUnderlineOffset: "4px",
                 }}
               >
-                {link}
+                {link.label}
               </a>
             ))}
           </div>
