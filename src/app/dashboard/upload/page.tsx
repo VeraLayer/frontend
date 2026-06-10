@@ -17,9 +17,7 @@ import { useAccount } from "wagmi";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 import Aside from "@/app/components/Aside";
 import Navbar from "@/app/components/Navbar";
-import { PaymentPanel } from "@/app/components/PaymentPanel";
 import { useArchiveData, ArchiveType } from "@/hooks/useVeraLayer";
-import { useSynapse } from "@/hooks/useSynapse";
 import { useStorageUpload } from "@/hooks/useStorageUpload";
 import { toast } from "@/lib/toast";
 
@@ -33,7 +31,8 @@ const BERYX_TX_URL = "https://beryx.io/fil/calibration/tx/";
 
 function UploadAssetsPage() {
   const searchParams = useSearchParams();
-  const defaultVault = searchParams.get("vault") === "heritage" ? "heritage" : "talent";
+  const vaultParam = searchParams?.get("vault") ?? null;
+  const defaultVault = vaultParam === "heritage" ? "heritage" : "talent";
   const [activeTab, setActiveTab] = useState<"talent" | "heritage">(defaultVault);
   const [activeFileType, setActiveFileType] = useState("Document");
   const [dragging, setDragging] = useState(false);
@@ -45,17 +44,13 @@ function UploadAssetsPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { isConnected, chainId } = useAccount();
-  const { synapse, initializing, initError } = useSynapse();
-  const { upload, uploading, uploadStatus, uploadError, commitWarning } = useStorageUpload(synapse);
+  const { upload, uploading, uploadStatus, uploadError, commitWarning } = useStorageUpload();
+  const { archive, txHash, isPending, isConfirming, isSuccess, error: archiveError } = useArchiveData();
 
   const wrongNetwork = isConnected && chainId !== 314159;
-  const synapseReady = !!synapse;
-  const synapseBlocked = isConnected && !wrongNetwork && !initializing && !synapseReady;
-  const { archive, txHash, isPending, isConfirming, isSuccess, error: archiveError } = useArchiveData();
 
   function pickFile(file: File) {
     setSelectedFile(file);
-    // Reset prior upload result when a new file is chosen
     setCid("");
     setDealId("");
   }
@@ -73,7 +68,7 @@ function UploadAssetsPage() {
   }
 
   async function handleUploadToFilecoin() {
-    if (!selectedFile || !synapse) return;
+    if (!selectedFile) return;
     const result = await upload(selectedFile);
     if (result) {
       setCid(result.cid);
@@ -90,7 +85,7 @@ function UploadAssetsPage() {
     });
   }
 
-  // ── Toast triggers ────────────────────────────────────────────────────
+  // ── Toast triggers ─────────────────────────────────────────────────
   useEffect(() => {
     if (uploadError) toast.error(uploadError.message.slice(0, 100));
   }, [uploadError]);
@@ -106,11 +101,11 @@ function UploadAssetsPage() {
   useEffect(() => {
     if (archiveError) toast.error(archiveError.message.slice(0, 100));
   }, [archiveError]);
-  // ──────────────────────────────────────────────────────────────────────
+  // ───────────────────────────────────────────────────────────────────
 
-  const uploadReady = !!selectedFile && !!synapse && !uploading;
+  // uploadReady no longer depends on synapse
+  const uploadReady = !!selectedFile && !uploading;
   const cidReady = !!cid;
-  // archiveTitle kept for UX — not sent to contract (contract stores only cid+dealId+archiveType)
 
   return (
     <div
@@ -187,7 +182,6 @@ function UploadAssetsPage() {
                 className="hidden"
                 onChange={handleFileInput}
               />
-
               {selectedFile ? (
                 <>
                   <FileCheck size={22} style={{ color: "#4AE183" }} />
@@ -281,7 +275,7 @@ function UploadAssetsPage() {
               </div>
             </div>
 
-            {/* ── Status banners ── */}
+            {/* Wrong network banner */}
             {wrongNetwork && (
               <div
                 className="flex items-start gap-2 p-3 rounded-lg"
@@ -296,27 +290,7 @@ function UploadAssetsPage() {
                     Wrong Network
                   </p>
                   <p className="text-[9px]" style={{ color: "#FFB955", opacity: 0.8 }}>
-                    Switch to Filecoin Calibration Testnet in your wallet. Use the network switcher above (top right).
-                  </p>
-                </div>
-              </div>
-            )}
-
-            {(initError || synapseBlocked) && !wrongNetwork && (
-              <div
-                className="flex items-start gap-2 p-3 rounded-lg"
-                style={{
-                  backgroundColor: "rgba(255,107,107,0.08)",
-                  border: "1px solid rgba(255,107,107,0.2)",
-                }}
-              >
-                <AlertCircle size={12} style={{ color: "#FF6B6B", flexShrink: 0, marginTop: 1 }} />
-                <div>
-                  <p className="text-[10px] font-semibold mb-0.5" style={{ color: "#FF6B6B" }}>
-                    Synapse SDK Error
-                  </p>
-                  <p className="text-[9px]" style={{ color: "#FF6B6B", opacity: 0.8 }}>
-                    {initError?.message.slice(0, 140) ?? "Could not initialize storage SDK. Try disconnecting and reconnecting your wallet."}
+                    Switch to Filecoin Calibration Testnet in your wallet.
                   </p>
                 </div>
               </div>
@@ -356,15 +330,13 @@ function UploadAssetsPage() {
                     ? "Step 1 Done — Stored on Filecoin ✓"
                     : uploading
                     ? uploadStatus
-                    : initializing
-                    ? "Initializing SDK…"
                     : wrongNetwork
                     ? "Switch Network First"
                     : "Step 1: Upload to Filecoin"}
                 </button>
               )}
 
-              {/* Commit warning (insufficient USDFC) */}
+              {/* Commit warning */}
               {commitWarning && cidReady && (
                 <div
                   className="flex items-start gap-2 p-2 rounded"
@@ -374,9 +346,7 @@ function UploadAssetsPage() {
                   }}
                 >
                   <AlertCircle size={11} style={{ color: "#FFB955", flexShrink: 0, marginTop: 1 }} />
-                  <p className="text-[10px]" style={{ color: "#FFB955" }}>
-                    {commitWarning}
-                  </p>
+                  <p className="text-[10px]" style={{ color: "#FFB955" }}>{commitWarning}</p>
                 </div>
               )}
 
@@ -395,7 +365,6 @@ function UploadAssetsPage() {
                   </p>
                 </div>
               )}
-
             </div>
 
             {/* Mini footer */}
@@ -433,10 +402,6 @@ function UploadAssetsPage() {
 
           {/* ── Right column ─────────────────────────────────────── */}
           <div className="w-56 flex-shrink-0 flex flex-col gap-4">
-
-            {/* Filecoin Pay panel */}
-            <PaymentPanel synapse={synapse} initializing={initializing} initError={initError} />
-
             {/* Sovereignty Status */}
             <div
               className="rounded-xl p-4 border"
@@ -462,10 +427,7 @@ function UploadAssetsPage() {
 
               <div className="flex flex-col gap-3 mb-4">
                 <div>
-                  <p
-                    className="text-[9px] uppercase tracking-widest mb-1"
-                    style={{ color: "#8A919F" }}
-                  >
+                  <p className="text-[9px] uppercase tracking-widest mb-1" style={{ color: "#8A919F" }}>
                     CID
                   </p>
                   <p
@@ -477,10 +439,7 @@ function UploadAssetsPage() {
                 </div>
 
                 <div>
-                  <p
-                    className="text-[9px] uppercase tracking-widest mb-1"
-                    style={{ color: "#8A919F" }}
-                  >
+                  <p className="text-[9px] uppercase tracking-widest mb-1" style={{ color: "#8A919F" }}>
                     Dataset ID
                   </p>
                   <p
@@ -530,16 +489,12 @@ function UploadAssetsPage() {
                   disabled={!cidReady || isPending || isConfirming || isSuccess}
                   className="w-full py-2 rounded-md text-xs font-semibold transition-opacity hover:opacity-80 flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed"
                   style={{
-                    backgroundColor: isSuccess
-                      ? "rgba(74,225,131,0.15)"
-                      : "#1A92FF",
+                    backgroundColor: isSuccess ? "rgba(74,225,131,0.15)" : "#1A92FF",
                     color: isSuccess ? "#4AE183" : "#0A0E1A",
                     border: isSuccess ? "1px solid rgba(74,225,131,0.3)" : "none",
                   }}
                 >
-                  {(isPending || isConfirming) && (
-                    <Loader2 size={12} className="animate-spin" />
-                  )}
+                  {(isPending || isConfirming) && <Loader2 size={12} className="animate-spin" />}
                   {isSuccess
                     ? "Archived On-Chain ✓"
                     : isPending

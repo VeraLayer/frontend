@@ -66,6 +66,7 @@ export default function Aside() {
                       {SIDEBAR_ARCHIVES.map(({ icon, label, active }) => (
                         <button
                           key={label}
+                          onClick={() => {}}
                           className="flex items-center gap-2 px-2.5 py-2 rounded-md text-xs text-left transition-colors"
                           style={{
                             backgroundColor: active

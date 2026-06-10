@@ -1,9 +1,6 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import type { Synapse } from "@filoz/synapse-sdk";
-import { calculate as calcPieceCID } from "@filoz/synapse-core/piece";
-import { uploadPieceStreaming } from "@filoz/synapse-core/sp";
 
 export interface StorageUploadResult {
   cid: string;
@@ -12,75 +9,57 @@ export interface StorageUploadResult {
   dealActive: boolean;
 }
 
-export function useStorageUpload(synapse: Synapse | null) {
+export function useStorageUpload() {
   const [uploading, setUploading] = useState(false);
   const [uploadStatus, setUploadStatus] = useState("");
   const [uploadError, setUploadError] = useState<Error | null>(null);
   const [commitWarning, setCommitWarning] = useState<string | null>(null);
 
-  const upload = useCallback(
-    async (file: File): Promise<StorageUploadResult | null> => {
-      if (!synapse || !file) return null;
-      setUploading(true);
-      setUploadError(null);
-      setCommitWarning(null);
-      setUploadStatus("Reading file…");
+  const upload = useCallback(async (file: File): Promise<StorageUploadResult | null> => {
+    setUploading(true);
+    setUploadError(null);
+    setCommitWarning(null);
+    setUploadStatus("Uploading to Filecoin…");
 
-      try {
-        const buffer = await file.arrayBuffer();
-        const data = new Uint8Array(buffer);
+    try {
+      const apiKey = process.env.NEXT_PUBLIC_LIGHTHOUSE_API_KEY;
+      if (!apiKey) throw new Error("NEXT_PUBLIC_LIGHTHOUSE_API_KEY is not set");
 
-        setUploadStatus("Computing Piece CID…");
-        const pieceCid = calcPieceCID(data);
-        const cid = pieceCid.toString();
+      const formData = new FormData();
+      formData.append("file", file);
 
-        // Single provider — one wallet signature max
-        setUploadStatus("Finding storage provider…");
-        const ctx = await synapse.storage.createContext();
-        const serviceURL = ctx.provider.pdp.serviceURL;
+      const res = await fetch("https://upload.lighthouse.storage/api/v0/add", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+        },
+        body: formData,
+      });
 
-        // Stream bytes to SP — no findPiece polling
-        setUploadStatus("Uploading to Filecoin…");
-        const uploadResult = await uploadPieceStreaming({
-          serviceURL,
-          data,
-          pieceCid,
-        });
-
-        // Commit on-chain (requires USDFC balance in Filecoin Pay)
-        let dealId = "";
-        let dealActive = false;
-        try {
-          setUploadStatus("Confirm in wallet…");
-          const commitResult = await ctx.commit({
-            pieces: [{ pieceCid: uploadResult.pieceCid }],
-          });
-          dealId = commitResult.dataSetId?.toString() ?? "";
-          dealActive = true;
-          setUploadStatus("Stored ✓");
-        } catch (commitErr) {
-          const msg = commitErr instanceof Error ? commitErr.message : String(commitErr);
-          const isFunds = /insuf|insufficient|balance|funds/i.test(msg);
-          setCommitWarning(
-            isFunds
-              ? "File uploaded but no active storage deal — deposit USDFC in Filecoin Pay to activate."
-              : `Storage deal skipped: ${msg.slice(0, 80)}`
-          );
-          setUploadStatus("Uploaded ✓");
-        }
-
-        return { cid, dealId, size: data.length, dealActive };
-      } catch (e: unknown) {
-        const err = e instanceof Error ? e : new Error(String(e));
-        setUploadError(err);
-        setUploadStatus("");
-        return null;
-      } finally {
-        setUploading(false);
+      if (!res.ok) {
+        const errText = await res.text();
+        throw new Error(`Lighthouse upload failed (${res.status}): ${errText.slice(0, 120)}`);
       }
-    },
-    [synapse]
-  );
+
+      const data = await res.json();
+      // Response shape: { Name, Hash, Size }
+      const cid = data.Hash as string;
+      const size = Number(data.Size ?? file.size);
+
+      if (!cid) throw new Error("Lighthouse returned no CID");
+
+      setUploadStatus("Stored ✓");
+      return { cid, dealId: "", size, dealActive: true };
+
+    } catch (e: unknown) {
+      const err = e instanceof Error ? e : new Error(String(e));
+      setUploadError(err);
+      setUploadStatus("");
+      return null;
+    } finally {
+      setUploading(false);
+    }
+  }, []);
 
   return { upload, uploading, uploadStatus, uploadError, commitWarning };
 }
