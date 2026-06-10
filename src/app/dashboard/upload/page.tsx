@@ -1,24 +1,25 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, Suspense, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import {
   Code2,
   FileImage,
   FileText,
-  FolderOpen,
-  Globe,
-  HardDrive,
-  Plus,
-  Settings,
   Upload,
   CheckCircle2,
-  ChevronRight,
+  ExternalLink,
+  Loader2,
+  FileCheck,
+  AlertCircle,
 } from "lucide-react";
+import { useAccount } from "wagmi";
+import { ConnectButton } from "@rainbow-me/rainbowkit";
 import Aside from "@/app/components/Aside";
 import Navbar from "@/app/components/Navbar";
-
-
-
+import { useArchiveData, ArchiveType } from "@/hooks/useVeraLayer";
+import { useStorageUpload } from "@/hooks/useStorageUpload";
+import { toast } from "@/lib/toast";
 
 const FILE_TYPES = [
   { icon: <Code2 size={18} />, label: "Code" },
@@ -26,34 +27,98 @@ const FILE_TYPES = [
   { icon: <FileText size={18} />, label: "Document" },
 ];
 
-const NODE_HEALTH = [
-  { label: "Active Deals", value: "1,204", highlight: false },
-  { label: "Node Uptime", value: "99.99%", highlight: true },
-  { label: "Latency", value: "14ms", highlight: false },
-];
+const BERYX_TX_URL = "https://beryx.io/fil/calibration/tx/";
 
-export default function UploadAssetsPage() {
-  const [activeTab, setActiveTab] = useState<"talent" | "heritage">("talent");
+function UploadAssetsPage() {
+  const searchParams = useSearchParams();
+  const vaultParam = searchParams?.get("vault") ?? null;
+  const defaultVault = vaultParam === "heritage" ? "heritage" : "talent";
+  const [activeTab, setActiveTab] = useState<"talent" | "heritage">(defaultVault);
   const [activeFileType, setActiveFileType] = useState("Document");
   const [dragging, setDragging] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [archiveTitle, setArchiveTitle] = useState("");
   const [description, setDescription] = useState("");
+  const [cid, setCid] = useState("");
+  const [dealId, setDealId] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const { isConnected, chainId } = useAccount();
+  const { upload, uploading, uploadStatus, uploadError, commitWarning } = useStorageUpload();
+  const { archive, txHash, isPending, isConfirming, isSuccess, error: archiveError } = useArchiveData();
+
+  const wrongNetwork = isConnected && chainId !== 314159;
+
+  function pickFile(file: File) {
+    setSelectedFile(file);
+    setCid("");
+    setDealId("");
+  }
+
+  function handleDrop(e: React.DragEvent) {
+    e.preventDefault();
+    setDragging(false);
+    const file = e.dataTransfer.files[0];
+    if (file) pickFile(file);
+  }
+
+  function handleFileInput(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (file) pickFile(file);
+  }
+
+  async function handleUploadToFilecoin() {
+    if (!selectedFile) return;
+    const result = await upload(selectedFile);
+    if (result) {
+      setCid(result.cid);
+      setDealId(result.dealId);
+    }
+  }
+
+  function handleArchiveOnChain() {
+    if (!cid) return;
+    archive({
+      cid,
+      dealId,
+      archiveType: activeTab === "talent" ? ArchiveType.Talent : ArchiveType.Heritage,
+    });
+  }
+
+  // ── Toast triggers ─────────────────────────────────────────────────
+  useEffect(() => {
+    if (uploadError) toast.error(uploadError.message.slice(0, 100));
+  }, [uploadError]);
+
+  useEffect(() => {
+    if (commitWarning) toast.warning(commitWarning);
+  }, [commitWarning]);
+
+  useEffect(() => {
+    if (isSuccess) toast.success("Archive confirmed on Filecoin Calibration!");
+  }, [isSuccess]);
+
+  useEffect(() => {
+    if (archiveError) toast.error(archiveError.message.slice(0, 100));
+  }, [archiveError]);
+  // ───────────────────────────────────────────────────────────────────
+
+  // uploadReady no longer depends on synapse
+  const uploadReady = !!selectedFile && !uploading;
+  const cidReady = !!cid;
 
   return (
     <div
       className="min-h-screen w-full flex flex-col"
       style={{ backgroundColor: "#0A0E1A", color: "#8A919F" }}
     >
-      {/* Top Nav */}
-        <Navbar />
+      <Navbar />
 
       <div className="flex flex-1 overflow-hidden">
-        {/* Sidebar */}
         <Aside />
-        {/* Main content */}
+
         <main className="flex-1 overflow-auto p-6 flex gap-4">
-          {/* Left column */}
+          {/* ── Left column ─────────────────────────────────────── */}
           <div className="flex-1 flex flex-col gap-4">
             {/* Tabs */}
             <div
@@ -78,12 +143,9 @@ export default function UploadAssetsPage() {
               ))}
             </div>
 
-            {/* Upload header */}
+            {/* Header */}
             <div>
-              <h2
-                className="text-base font-semibold mb-0.5"
-                style={{ color: "#DFE2F3" }}
-              >
+              <h2 className="text-base font-semibold mb-0.5" style={{ color: "#DFE2F3" }}>
                 Upload Your Work
               </h2>
               <p className="text-xs" style={{ color: "#8A919F" }}>
@@ -95,25 +157,52 @@ export default function UploadAssetsPage() {
             <div
               onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
               onDragLeave={() => setDragging(false)}
-              onDrop={(e) => { e.preventDefault(); setDragging(false); }}
+              onDrop={handleDrop}
               onClick={() => fileInputRef.current?.click()}
               className="rounded-xl flex flex-col items-center justify-center gap-2 cursor-pointer transition-colors"
               style={{
-                border: `1.5px dashed ${dragging ? "#1A92FF" : "rgba(255,255,255,0.1)"}`,
+                border: `1.5px dashed ${
+                  dragging
+                    ? "#1A92FF"
+                    : selectedFile
+                    ? "rgba(74,225,131,0.4)"
+                    : "rgba(255,255,255,0.1)"
+                }`,
                 backgroundColor: dragging
                   ? "rgba(26,146,255,0.05)"
+                  : selectedFile
+                  ? "rgba(74,225,131,0.03)"
                   : "rgba(255,255,255,0.02)",
                 height: "160px",
               }}
             >
-              <input ref={fileInputRef} type="file" className="hidden" multiple />
-              <Upload size={22} style={{ color: "#1A92FF" }} />
-              <p className="text-xs" style={{ color: "#DFE2F3" }}>
-                Drag & drop files to upload
-              </p>
-              <p className="text-[10px]" style={{ color: "#8A919F" }}>
-                Maximum file size: 50GB
-              </p>
+              <input
+                ref={fileInputRef}
+                type="file"
+                className="hidden"
+                onChange={handleFileInput}
+              />
+              {selectedFile ? (
+                <>
+                  <FileCheck size={22} style={{ color: "#4AE183" }} />
+                  <p className="text-xs font-medium" style={{ color: "#DFE2F3" }}>
+                    {selectedFile.name}
+                  </p>
+                  <p className="text-[10px]" style={{ color: "#8A919F" }}>
+                    {(selectedFile.size / 1024 / 1024).toFixed(2)} MB · Click to change
+                  </p>
+                </>
+              ) : (
+                <>
+                  <Upload size={22} style={{ color: "#1A92FF" }} />
+                  <p className="text-xs" style={{ color: "#DFE2F3" }}>
+                    Drag & drop files to upload
+                  </p>
+                  <p className="text-[10px]" style={{ color: "#8A919F" }}>
+                    Maximum file size: 50 GB
+                  </p>
+                </>
+              )}
             </div>
 
             {/* File type selector */}
@@ -133,8 +222,7 @@ export default function UploadAssetsPage() {
                         ? "rgba(26,146,255,0.3)"
                         : "rgba(255,255,255,0.06)"
                     }`,
-                    color:
-                      activeFileType === label ? "#A4C9FF" : "#8A919F",
+                    color: activeFileType === label ? "#A4C9FF" : "#8A919F",
                   }}
                 >
                   {icon}
@@ -187,6 +275,98 @@ export default function UploadAssetsPage() {
               </div>
             </div>
 
+            {/* Wrong network banner */}
+            {wrongNetwork && (
+              <div
+                className="flex items-start gap-2 p-3 rounded-lg"
+                style={{
+                  backgroundColor: "rgba(255,185,85,0.08)",
+                  border: "1px solid rgba(255,185,85,0.25)",
+                }}
+              >
+                <AlertCircle size={12} style={{ color: "#FFB955", flexShrink: 0, marginTop: 1 }} />
+                <div>
+                  <p className="text-[10px] font-semibold mb-0.5" style={{ color: "#FFB955" }}>
+                    Wrong Network
+                  </p>
+                  <p className="text-[9px]" style={{ color: "#FFB955", opacity: 0.8 }}>
+                    Switch to Filecoin Calibration Testnet in your wallet.
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {/* ── Step 1: Upload to Filecoin ── */}
+            <div className="flex flex-col gap-2">
+              {!isConnected ? (
+                <ConnectButton.Custom>
+                  {({ openConnectModal }) => (
+                    <button
+                      onClick={openConnectModal}
+                      className="w-full py-2.5 rounded-lg text-xs font-semibold transition-opacity hover:opacity-80"
+                      style={{ backgroundColor: "#1A92FF", color: "#0A0E1A" }}
+                    >
+                      Connect Wallet to Upload
+                    </button>
+                  )}
+                </ConnectButton.Custom>
+              ) : (
+                <button
+                  onClick={handleUploadToFilecoin}
+                  disabled={!uploadReady || !!cidReady}
+                  className="w-full py-2.5 rounded-lg text-xs font-semibold transition-opacity hover:opacity-80 flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed"
+                  style={{
+                    backgroundColor: cidReady
+                      ? "rgba(74,225,131,0.12)"
+                      : "rgba(26,146,255,0.15)",
+                    color: cidReady ? "#4AE183" : "#A4C9FF",
+                    border: cidReady
+                      ? "1px solid rgba(74,225,131,0.3)"
+                      : "1px solid rgba(26,146,255,0.3)",
+                  }}
+                >
+                  {uploading && <Loader2 size={12} className="animate-spin" />}
+                  {cidReady
+                    ? "Step 1 Done — Stored on Filecoin ✓"
+                    : uploading
+                    ? uploadStatus
+                    : wrongNetwork
+                    ? "Switch Network First"
+                    : "Step 1: Upload to Filecoin"}
+                </button>
+              )}
+
+              {/* Commit warning */}
+              {commitWarning && cidReady && (
+                <div
+                  className="flex items-start gap-2 p-2 rounded"
+                  style={{
+                    backgroundColor: "rgba(255,185,85,0.08)",
+                    border: "1px solid rgba(255,185,85,0.2)",
+                  }}
+                >
+                  <AlertCircle size={11} style={{ color: "#FFB955", flexShrink: 0, marginTop: 1 }} />
+                  <p className="text-[10px]" style={{ color: "#FFB955" }}>{commitWarning}</p>
+                </div>
+              )}
+
+              {/* Upload error */}
+              {uploadError && (
+                <div
+                  className="flex items-start gap-2 p-2 rounded"
+                  style={{
+                    backgroundColor: "rgba(255,107,107,0.08)",
+                    border: "1px solid rgba(255,107,107,0.2)",
+                  }}
+                >
+                  <AlertCircle size={11} style={{ color: "#FF6B6B", flexShrink: 0, marginTop: 1 }} />
+                  <p className="text-[10px]" style={{ color: "#FF6B6B" }}>
+                    {uploadError.message.slice(0, 120)}
+                  </p>
+                </div>
+              )}
+            </div>
+
             {/* Mini footer */}
             <div
               className="mt-auto pt-4 border-t"
@@ -201,150 +381,158 @@ export default function UploadAssetsPage() {
                     VeraLayer Protocol
                   </p>
                   <p className="text-[10px]" style={{ color: "#8A919F" }}>
-                    © 2024 Sovereign
-                  </p>
-                  <p className="text-[10px]" style={{ color: "#8A919F" }}>
-                    Technically Secured.
+                    © 2024 Sovereign · Technically Secured.
                   </p>
                 </div>
                 <div className="flex flex-col gap-1 items-end">
-                  {["Documentation", "Smart Contracts", "Privacy", "Nodes"].map(
-                    (l) => (
-                      <a
-                        key={l}
-                        href="#"
-                        className="text-[10px] transition-opacity hover:opacity-70"
-                        style={{ color: "#8A919F" }}
-                      >
-                        {l}
-                      </a>
-                    )
-                  )}
+                  {["Documentation", "Smart Contracts", "Privacy", "Nodes"].map((l) => (
+                    <a
+                      key={l}
+                      href="#"
+                      className="text-[10px] transition-opacity hover:opacity-70"
+                      style={{ color: "#8A919F" }}
+                    >
+                      {l}
+                    </a>
+                  ))}
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Right column */}
+          {/* ── Right column ─────────────────────────────────────── */}
           <div className="w-56 flex-shrink-0 flex flex-col gap-4">
             {/* Sovereignty Status */}
             <div
               className="rounded-xl p-4 border"
               style={{
                 backgroundColor: "rgba(255,255,255,0.02)",
-                borderColor: "rgba(74,225,131,0.3)",
+                borderColor: isSuccess
+                  ? "rgba(74,225,131,0.3)"
+                  : "rgba(255,255,255,0.08)",
               }}
             >
               <div className="flex items-center gap-1.5 mb-4">
-                <CheckCircle2 size={13} style={{ color: "#4AE183" }} />
+                <CheckCircle2
+                  size={13}
+                  style={{ color: isSuccess ? "#4AE183" : "#8A919F" }}
+                />
                 <p
                   className="text-[10px] font-semibold tracking-widest uppercase"
-                  style={{ color: "#4AE183" }}
+                  style={{ color: isSuccess ? "#4AE183" : "#8A919F" }}
                 >
-                  Sovereignty Status
+                  On-Chain Status
                 </p>
               </div>
 
-              <div className="flex flex-col gap-3">
+              <div className="flex flex-col gap-3 mb-4">
                 <div>
-                  <p
-                    className="text-[9px] uppercase tracking-widest mb-1"
-                    style={{ color: "#8A919F" }}
-                  >
-                    Content Identifier (CID)
+                  <p className="text-[9px] uppercase tracking-widest mb-1" style={{ color: "#8A919F" }}>
+                    CID
                   </p>
                   <p
-                    className="text-[10px] font-mono break-all"
-                    style={{ color: "#C0C7D6" }}
+                    className="text-[9px] font-mono break-all"
+                    style={{ color: cid ? "#C0C7D6" : "#404753" }}
                   >
-                    bafybeiqdyrt2Sfq7ud
+                    {cid || "Waiting for upload…"}
                   </p>
                 </div>
 
                 <div>
-                  <p
-                    className="text-[9px] uppercase tracking-widest mb-1"
-                    style={{ color: "#8A919F" }}
-                  >
-                    Deal ID
+                  <p className="text-[9px] uppercase tracking-widest mb-1" style={{ color: "#8A919F" }}>
+                    Dataset ID
                   </p>
                   <p
-                    className="text-[10px] font-mono"
-                    style={{ color: "#C0C7D6" }}
+                    className="text-[9px] font-mono"
+                    style={{ color: dealId ? "#C0C7D6" : "#404753" }}
                   >
-                    #96201 · FIL · VERA
+                    {dealId || "—"}
                   </p>
                 </div>
 
-                <div className="flex items-center justify-between">
-                  <p
-                    className="text-[10px]"
-                    style={{ color: "#C0C7D6" }}
+                {isSuccess && txHash && (
+                  <a
+                    href={`${BERYX_TX_URL}${txHash}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-1 text-[10px] transition-opacity hover:opacity-70"
+                    style={{ color: "#4AE183" }}
                   >
-                    Verified On-Chain
+                    <ExternalLink size={10} />
+                    View on Beryx
+                  </a>
+                )}
+
+                {archiveError && (
+                  <p className="text-[10px]" style={{ color: "#FF6B6B" }}>
+                    {archiveError.message.slice(0, 60)}
                   </p>
-                  <span
-                    className="w-2 h-2 rounded-full"
-                    style={{ backgroundColor: "#4AE183" }}
-                  />
-                </div>
+                )}
               </div>
 
-              {/* Stamp */}
-              <div
-                className="mt-4 w-full flex items-center justify-center py-2 rounded border"
-                style={{
-                  borderColor: "rgba(74,225,131,0.25)",
-                  backgroundColor: "rgba(74,225,131,0.05)",
-                }}
-              >
-                <p
-                  className="text-[9px] font-bold tracking-[0.2em] uppercase"
-                  style={{ color: "#4AE183", opacity: 0.6 }}
-                >
-                  VeraLayer Verified
-                </p>
-              </div>
-            </div>
-
-            {/* Node Health */}
-            <div
-              className="rounded-xl p-4 border"
-              style={{
-                backgroundColor: "rgba(255,255,255,0.02)",
-                borderColor: "rgba(255,255,255,0.06)",
-              }}
-            >
-              <p
-                className="text-[9px] uppercase tracking-widest mb-3 font-semibold"
-                style={{ color: "#8A919F" }}
-              >
-                Node Health
-              </p>
-              <div className="flex flex-col gap-2.5">
-                {NODE_HEALTH.map(({ label, value, highlight }) => (
-                  <div
-                    key={label}
-                    className="flex items-center justify-between"
-                  >
-                    <p className="text-[10px]" style={{ color: "#8A919F" }}>
-                      {label}
-                    </p>
-                    <p
-                      className="text-[10px] font-semibold"
-                      style={{
-                        color: highlight ? "#4AE183" : "#DFE2F3",
-                      }}
+              {/* Step 2: Archive on-chain */}
+              {!isConnected ? (
+                <ConnectButton.Custom>
+                  {({ openConnectModal }) => (
+                    <button
+                      onClick={openConnectModal}
+                      className="w-full py-2 rounded-md text-xs font-semibold transition-opacity hover:opacity-80"
+                      style={{ backgroundColor: "#1A92FF", color: "#0A0E1A" }}
                     >
-                      {value}
-                    </p>
-                  </div>
-                ))}
-              </div>
+                      Connect Wallet
+                    </button>
+                  )}
+                </ConnectButton.Custom>
+              ) : (
+                <button
+                  onClick={handleArchiveOnChain}
+                  disabled={!cidReady || isPending || isConfirming || isSuccess}
+                  className="w-full py-2 rounded-md text-xs font-semibold transition-opacity hover:opacity-80 flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed"
+                  style={{
+                    backgroundColor: isSuccess ? "rgba(74,225,131,0.15)" : "#1A92FF",
+                    color: isSuccess ? "#4AE183" : "#0A0E1A",
+                    border: isSuccess ? "1px solid rgba(74,225,131,0.3)" : "none",
+                  }}
+                >
+                  {(isPending || isConfirming) && <Loader2 size={12} className="animate-spin" />}
+                  {isSuccess
+                    ? "Archived On-Chain ✓"
+                    : isPending
+                    ? "Confirm in Wallet…"
+                    : isConfirming
+                    ? "Confirming…"
+                    : "Step 2: Archive On-Chain"}
+                </button>
+              )}
+
+              {isSuccess && (
+                <div
+                  className="mt-3 w-full flex items-center justify-center py-2 rounded border"
+                  style={{
+                    borderColor: "rgba(74,225,131,0.25)",
+                    backgroundColor: "rgba(74,225,131,0.05)",
+                  }}
+                >
+                  <p
+                    className="text-[9px] font-bold tracking-[0.2em] uppercase"
+                    style={{ color: "#4AE183", opacity: 0.8 }}
+                  >
+                    VeraLayer Verified
+                  </p>
+                </div>
+              )}
             </div>
           </div>
         </main>
       </div>
     </div>
+  );
+}
+
+export default function UploadPage() {
+  return (
+    <Suspense fallback={null}>
+      <UploadAssetsPage />
+    </Suspense>
   );
 }
