@@ -1,6 +1,6 @@
 "use client";
 
-import { useWriteContract, useReadContract, useReadContracts, useWaitForTransactionReceipt } from "wagmi";
+import { useWriteContract, useReadContract, useWaitForTransactionReceipt } from "wagmi";
 import { VERALAYER_ABI, VERALAYER_ADDRESS, ArchiveType } from "@/lib/veralayer-abi";
 
 export { ArchiveType };
@@ -20,6 +20,23 @@ export interface ChainAsset {
   createdAt: bigint;
   revoked: boolean;
   verifiedBy: `0x${string}`;
+}
+
+// Contract MAX_PAGE_SIZE = 50
+const MAX_PAGE = 50;
+
+function mapAssets(raw: unknown): ChainAsset[] {
+  if (!Array.isArray(raw)) return [];
+  return (raw as ChainAsset[]).map((a) => ({
+    id: a.id,
+    creator: a.creator,
+    cidHash: a.cidHash,
+    dealId: a.dealId,
+    archiveType: Number(a.archiveType) as ArchiveType,
+    createdAt: a.createdAt,
+    revoked: a.revoked,
+    verifiedBy: a.verifiedBy,
+  }));
 }
 
 export function useArchiveData() {
@@ -48,53 +65,56 @@ export function useArchiveCount() {
     abi: VERALAYER_ABI,
     functionName: "getArchiveCount",
   });
-  return { count: data, isLoading };
+  return { count: data as bigint | undefined, isLoading };
 }
 
-// Legacy alias used by HeroSection
 export { useArchiveCount as useAssetsCount };
 
 export function useAllAssets() {
-  const { count, isLoading: countLoading } = useArchiveCount();
-  const archiveCount = count !== undefined ? Number(count) : 0;
+  // ── counts ────────────────────────────────────────────────────────
+  const { data: totalData,   isLoading: totalLoading }   = useReadContract({ address: VERALAYER_ADDRESS, abi: VERALAYER_ABI, functionName: "getArchiveCount" });
+  const { data: talentData,  isLoading: talentCLoading }  = useReadContract({ address: VERALAYER_ADDRESS, abi: VERALAYER_ABI, functionName: "getTalentArchiveCount" });
+  const { data: heritageData,isLoading: heritageCLoading }= useReadContract({ address: VERALAYER_ADDRESS, abi: VERALAYER_ABI, functionName: "getHeritageArchiveCount" });
 
-  const { data: talentData, isLoading: talentLoading } = useReadContract({
+  const total          = totalData    ? Number(totalData)    : 0;
+  const talentCount    = talentData   ? Number(talentData)   : 0;
+  const heritageCount  = heritageData ? Number(heritageData) : 0;
+
+  const talentLimit   = Math.min(talentCount,   MAX_PAGE);
+  const heritageLimit = Math.min(heritageCount, MAX_PAGE);
+
+  // ── talent archives (offset-based) ────────────────────────────────
+  const { data: talentRaw, isLoading: talentLoading } = useReadContract({
     address: VERALAYER_ADDRESS,
-    abi: VERALAYER_ABI,
-    functionName: "getTalentArchiveCount",
+    abi:     VERALAYER_ABI,
+    functionName: "getTalentArchives",
+    args:  [0n, BigInt(talentLimit)],
+    query: { enabled: talentCount > 0 },
   });
 
-  const { data: heritageData, isLoading: heritageLoading } = useReadContract({
+  // ── heritage archives (offset-based) ──────────────────────────────
+  const { data: heritageRaw, isLoading: heritageLoading } = useReadContract({
     address: VERALAYER_ADDRESS,
-    abi: VERALAYER_ABI,
-    functionName: "getHeritageArchiveCount",
+    abi:     VERALAYER_ABI,
+    functionName: "getHeritageArchives",
+    args:  [0n, BigInt(heritageLimit)],
+    query: { enabled: heritageCount > 0 },
   });
 
-  const { data, isLoading: assetsLoading } = useReadContract({
-    address: VERALAYER_ADDRESS,
-    abi: VERALAYER_ABI,
-    functionName: "getArchives",
-    args: [0n, BigInt(Math.min(archiveCount, 100))],
-    query: { enabled: archiveCount > 0 },
-  });
-
-  const raw = (data as unknown as ChainAsset[] | undefined) ?? [];
-  const assets: ChainAsset[] = raw.map((a) => ({
-    id: a.id,
-    creator: a.creator,
-    cidHash: a.cidHash,
-    dealId: a.dealId,
-    archiveType: Number(a.archiveType) as ArchiveType,
-    createdAt: a.createdAt,
-    revoked: a.revoked,
-    verifiedBy: a.verifiedBy,
-  }));
+  const talentAssets  = mapAssets(talentRaw);
+  const heritageAssets = mapAssets(heritageRaw);
+  // Merge and sort by id ascending so "recent" is predictable
+  const assets = [...talentAssets, ...heritageAssets].sort((a, b) =>
+    a.id < b.id ? -1 : a.id > b.id ? 1 : 0
+  );
 
   return {
     assets,
-    isLoading: countLoading || assetsLoading || talentLoading || heritageLoading,
-    count: archiveCount,
-    talentCount: talentData !== undefined ? Number(talentData) : 0,
-    heritageCount: heritageData !== undefined ? Number(heritageData) : 0,
+    talentAssets,
+    heritageAssets,
+    isLoading: totalLoading || talentCLoading || heritageCLoading || talentLoading || heritageLoading,
+    count:        total,
+    talentCount,
+    heritageCount,
   };
 }

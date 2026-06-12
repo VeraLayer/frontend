@@ -57,6 +57,7 @@ function HeritageCard({ asset }: { asset: ChainAsset }) {
   const date = new Date(Number(asset.createdAt) * 1000).toLocaleDateString("en-GB", {
     day: "numeric", month: "short", year: "numeric",
   });
+  const ipfsUrl = asset.dealId ? `/api/ipfs/${asset.dealId}` : null;
   return (
     <div
       className="flex items-stretch gap-3 rounded-xl border overflow-hidden"
@@ -65,7 +66,15 @@ function HeritageCard({ asset }: { asset: ChainAsset }) {
       <div className="w-28 flex-shrink-0 relative" style={{ backgroundColor: bg, minHeight: "80px" }}>
         <div className="absolute inset-0" style={{ background: `radial-gradient(ellipse at 40% 50%, ${accent} 0%, ${bg} 80%)` }} />
         <div className="absolute inset-0 opacity-10" style={{ backgroundImage: "repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(255,255,255,0.03) 3px,rgba(255,255,255,0.03) 4px)" }} />
-        <span className="absolute top-1.5 left-1.5 text-[7px] px-1.5 py-0.5 rounded font-medium" style={{ backgroundColor: "#FFB955", color: "#0A0E1A" }}>
+        {ipfsUrl && (
+          <img
+            src={ipfsUrl}
+            alt="Heritage asset"
+            className="absolute inset-0 w-full h-full object-cover"
+            onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
+          />
+        )}
+        <span className="absolute top-1.5 left-1.5 text-[7px] px-1.5 py-0.5 rounded font-medium z-10" style={{ backgroundColor: "#FFB955", color: "#0A0E1A" }}>
           ARCHIVAL
         </span>
       </div>
@@ -120,7 +129,7 @@ export default function HeritageAssetsPage() {
   const { data: archivesData, isLoading } = useReadContract({
     address: VERALAYER_ADDRESS, abi: VERALAYER_ABI,
     functionName: "getHeritageArchives",
-    args: [0n, BigInt(Math.min(heritageCount, 20))],
+    args: [0n, BigInt(Math.min(heritageCount, 50))],
     query: { enabled: heritageCount > 0 },
   });
 
@@ -339,16 +348,36 @@ export default function HeritageAssetsPage() {
                 </div>
 
                 <div className="flex flex-col gap-3 mb-4">
+                  {/* File preview */}
+                  {cid && (
+                    <div
+                      className="w-full rounded-lg overflow-hidden"
+                      style={{ border: "1px solid rgba(255,255,255,0.08)", backgroundColor: "rgba(255,255,255,0.02)" }}
+                    >
+                      <img
+                        src={`/api/ipfs/${cid}`}
+                        alt="Uploaded file"
+                        className="w-full object-cover"
+                        style={{ maxHeight: "100px" }}
+                        onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
+                      />
+                      <a
+                        href={`https://ipfs.io/ipfs/${cid}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-1 text-[9px] px-2 py-1.5 transition-opacity hover:opacity-70"
+                        style={{ color: "#FFB955" }}
+                      >
+                        <ExternalLink size={8} />
+                        View on IPFS
+                      </a>
+                    </div>
+                  )}
+
                   <div>
                     <p className="text-[9px] uppercase tracking-widest mb-1" style={{ color: "#8A919F" }}>CID</p>
                     <p className="text-[9px] font-mono break-all" style={{ color: cid ? "#C0C7D6" : "#404753" }}>
                       {cid || "Waiting for upload…"}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-[9px] uppercase tracking-widest mb-1" style={{ color: "#8A919F" }}>Dataset ID</p>
-                    <p className="text-[9px] font-mono" style={{ color: dealId ? "#C0C7D6" : "#404753" }}>
-                      {dealId || "—"}
                     </p>
                   </div>
 

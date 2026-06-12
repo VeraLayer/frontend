@@ -431,6 +431,32 @@ function UploadAssetsPage() {
               </div>
 
               <div className="flex flex-col gap-3 mb-4">
+                {/* File preview */}
+                {cid && (
+                  <div
+                    className="w-full rounded-lg overflow-hidden"
+                    style={{ border: "1px solid rgba(255,255,255,0.08)", backgroundColor: "rgba(255,255,255,0.02)" }}
+                  >
+                    <img
+                      src={`/api/ipfs/${cid}`}
+                      alt="Uploaded file"
+                      className="w-full object-cover"
+                      style={{ maxHeight: "120px" }}
+                      onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
+                    />
+                    <a
+                      href={`https://ipfs.io/ipfs/${cid}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-1 text-[9px] px-2 py-1.5 transition-opacity hover:opacity-70"
+                      style={{ color: "#A4C9FF" }}
+                    >
+                      <ExternalLink size={8} />
+                      View on IPFS
+                    </a>
+                  </div>
+                )}
+
                 <div>
                   <p className="text-[9px] uppercase tracking-widest mb-1" style={{ color: "#8A919F" }}>
                     CID
@@ -440,18 +466,6 @@ function UploadAssetsPage() {
                     style={{ color: cid ? "#C0C7D6" : "#404753" }}
                   >
                     {cid || "Waiting for upload…"}
-                  </p>
-                </div>
-
-                <div>
-                  <p className="text-[9px] uppercase tracking-widest mb-1" style={{ color: "#8A919F" }}>
-                    Dataset ID
-                  </p>
-                  <p
-                    className="text-[9px] font-mono"
-                    style={{ color: dealId ? "#C0C7D6" : "#404753" }}
-                  >
-                    {dealId || "—"}
                   </p>
                 </div>
 
