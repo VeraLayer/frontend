@@ -13,22 +13,70 @@ import {
   FileCheck,
   CheckCircle2,
   AlertCircle,
+  LayoutDashboard,
+  Archive,
+  Settings,
 } from "lucide-react";
 import Link from "next/link";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 import Aside from "@/app/components/Aside";
-import { useReadContract, useAccount } from "wagmi";
-import { VERALAYER_ABI, VERALAYER_ADDRESS, ArchiveType } from "@/lib/veralayer-abi";
-import { useArchiveData, type ChainAsset } from "@/hooks/useVeraLayer";
-import { useStorageUpload } from "@/hooks/useStorageUpload";
+import { useAccount, useReadContract } from "wagmi";
 import { useSynapse } from "@/hooks/useSynapse";
-import { PaymentPanel } from "@/app/components/PaymentPanel";
+import { ArchiveType, VERALAYER_ABI, VERALAYER_ADDRESS } from "@/lib/veralayer-abi";
 import { toast } from "@/lib/toast";
+import { PaymentPanel } from "@/app/components/PaymentPanel";
+import { ChainAsset } from "@/hooks/useVeraLayer";
+
+
+const SIDEBAR_NAV = [
+  { icon: <LayoutDashboard size={13} />, label: "Dashboard", href: "#" },
+  { icon: <Upload size={13} />, label: "My Uploads", href: "#" },
+  { icon: <Archive size={13} />, label: "Heritage Assets", href: "#", active: true },
+  { icon: <Settings size={13} />, label: "Settings", href: "#" },
+];
 
 const BERYX_ADDR  = "https://beryx.io/fil/calibration/address/";
 const BERYX_TX    = "https://beryx.io/fil/calibration/tx/";
 
-const FILTER_TABS = ["All Assets", "Search Program", "Legacy Performances", "Music & Art"];
+const FILTER_TABS = [
+  "All Assets",
+  "Search Program",
+  "Legacy Performances",
+  "Music & Art",
+];
+
+const ASSET_CARDS = [
+  {
+    id: 1,
+    label: "ARCHIVAL",
+    sublabel: "1234 Contributions",
+    title: "Opening Ceremony: Unified Flag Raise",
+    type: "FIL Archive",
+    imageBg: "#0D1A12",
+    imageAccent: "#1c3820",
+    starred: false,
+  },
+  {
+    id: 2,
+    label: "ARCHIVAL",
+    sublabel: "5,042 Contributions",
+    title: "Imperial Weave by Patterns Collective",
+    type: "FIL Archive",
+    imageBg: "#0A0A0A",
+    imageAccent: "#1a1a1a",
+    starred: false,
+  },
+  {
+    id: 3,
+    label: "ARCHIVAL",
+    sublabel: "924 Contributions",
+    title: "Oral Poetry: The Sokoto Man of Loss",
+    type: "FIL Archive",
+    imageBg: "#100A0A",
+    imageAccent: "#2a1010",
+    starred: true,
+  },
+];
 
 const FEATURE_CARDS = [
   { id: 1, icon: <GitBranch size={18} />, iconColor: "#A4C9FF", iconBg: "rgba(164,201,255,0.1)",  title: "Provenance Graph",    body: "Track authenticity back to physical origin with cryptographic last-mile lineage & proof of registration." },
@@ -174,11 +222,22 @@ export default function HeritageAssetsPage() {
 
       <main className="flex-1 overflow-auto">
         {/* Top nav */}
-        <div className="flex items-center justify-between px-6 py-3 border-b" style={{ borderColor: "rgba(255,255,255,0.06)" }}>
+        <div
+          className="flex items-center justify-between px-6 py-3 border-b"
+          style={{ borderColor: "rgba(255,255,255,0.06)" }}
+        >
           <div className="flex items-center gap-5">
             {["Archive", "Heritage", "Explore"].map((l) => (
-              <a key={l} href="#" className="text-xs transition-opacity hover:opacity-70"
-                style={{ color: l === "Heritage" ? "#DFE2F3" : "#8A919F", textDecoration: l === "Heritage" ? "underline" : "none", textUnderlineOffset: "4px" }}>
+              <a
+                key={l}
+                href="#"
+                className="text-xs transition-opacity hover:opacity-70"
+                style={{
+                  color: l === "Heritage" ? "#DFE2F3" : "#8A919F",
+                  textDecoration: l === "Heritage" ? "underline" : "none",
+                  textUnderlineOffset: "4px",
+                }}
+              >
                 {l}
               </a>
             ))}

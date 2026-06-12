@@ -4,10 +4,12 @@ import { useState, useRef } from "react";
 import { Upload } from "lucide-react";
 import Link from "next/link";
 import Aside from "../components/Aside";
-import { useStorageUpload } from "@/hooks/useStorageUpload";
-import { useArchiveData, ArchiveType } from "@/hooks/useVeraLayer";
+import { ArchiveType } from "@/lib/veralayer-abi";
 import { useAccount } from "wagmi";
+import { useStorageUpload } from "@/hooks/useStorageUpload";
+import { useArchiveData } from "@/hooks/useVeraLayer";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
+
 
 const ARCHIVE_TIERS = [
   { id: "general",    title: "General Data",     subtitle: "Cold storage tier" },
@@ -74,11 +76,13 @@ export default function DashboardPage() {
 
   return (
     <div
-      className="min-h-screen flex"
+      className="min-h-screen grid grid-cols-12" 
       style={{ backgroundColor: "#0A0E1A", color: "#8A919F" }}
     >
+      {/* Sidebar */}
       <Aside />
 
+      {/* Main */}
       <main className="flex-1 p-6 flex flex-col gap-5 max-w-2xl">
 
         {/* Archive Tier Selector */}

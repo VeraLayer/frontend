@@ -1,7 +1,11 @@
 "use client";
 
 import { CheckCircle2, ExternalLink, Shield } from "lucide-react";
+<<<<<<< HEAD
+import Navbar from "../components/Navbar";
+=======
 import Navbar from "@/app/components/Navbar";
+>>>>>>> origin
 
 const ARCHIVE_CARDS = [
   {
@@ -53,6 +57,8 @@ const STATS = [
 
 export default function ArchivePage() {
   return (
+    <>
+    <Navbar />
     <div
       className="min-h-screen w-full"
       style={{ backgroundColor: "#0A0E1A", color: "#8A919F" }}
@@ -368,5 +374,6 @@ export default function ArchivePage() {
         </div>
       </div>
     </div>
+    </>
   );
 }

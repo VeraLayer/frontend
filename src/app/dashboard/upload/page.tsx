@@ -17,11 +17,11 @@ import { useAccount } from "wagmi";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 import Aside from "@/app/components/Aside";
 import Navbar from "@/app/components/Navbar";
-import { PaymentPanel } from "@/app/components/PaymentPanel";
 import { useArchiveData, ArchiveType } from "@/hooks/useVeraLayer";
 import { useStorageUpload } from "@/hooks/useStorageUpload";
 import { useSynapse } from "@/hooks/useSynapse";
 import { toast } from "@/lib/toast";
+import { PaymentPanel } from "@/app/components/PaymentPanel";
 
 const FILE_TYPES = [
   { icon: <Code2 size={18} />, label: "Code" },
@@ -49,7 +49,6 @@ function UploadAssetsPage() {
   const { synapse, initializing, initError } = useSynapse();
   const { upload, uploading, uploadStatus, uploadError, commitWarning } = useStorageUpload();
   const { archive, txHash, isPending, isConfirming, isSuccess, error: archiveError } = useArchiveData();
-
   const wrongNetwork = isConnected && chainId !== 314159;
 
   function pickFile(file: File) {
@@ -83,7 +82,7 @@ function UploadAssetsPage() {
     if (!cid) return;
     archive({
       cid,
-      dealId,
+      dealId: dealId || cid,
       archiveType: activeTab === "talent" ? ArchiveType.Talent : ArchiveType.Heritage,
     });
   }
@@ -541,6 +540,7 @@ function UploadAssetsPage() {
                 </div>
               )}
             </div>
+
           </div>
         </main>
       </div>

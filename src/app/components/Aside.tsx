@@ -152,8 +152,32 @@ export default function Aside() {
           className="text-[9px] uppercase tracking-widest mb-2"
           style={{ color: "#8A919F" }}
         >
-          Navigate
+          My Archives
         </p>
+        <div className="flex flex-col gap-0.5">
+          {SIDEBAR_NAV.map(({ icon, label, href, active }) => (
+            <Link
+              key={label}
+              href={href}
+              className="flex items-center gap-2 px-2.5 py-2 rounded-md text-xs text-left transition-colors"
+              style={{
+                backgroundColor: active
+                  ? "rgba(26,146,255,0.12)"
+                  : "transparent",
+                color: active ? "#A4C9FF" : "#8A919F",
+              }}
+            >
+              {icon}
+              {label}
+            </Link>
+          ))}
+        </div>
+          <p
+            className="text-[9px] uppercase tracking-widest mb-2"
+            style={{ color: "#8A919F" }}
+          >
+            Navigate
+          </p>
         <div className="flex flex-col gap-0.5">
           {SIDEBAR_NAV.map(({ icon, label, href }) => {
             const active = pathname === href;
@@ -185,5 +209,7 @@ export default function Aside() {
         New Archive
       </Link>
     </aside>
-  );
+
+  )
 }
+  

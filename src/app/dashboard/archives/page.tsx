@@ -3,9 +3,9 @@
 import { useState } from "react";
 import { Archive, ExternalLink, Loader2, Shield, User, CheckCircle2 } from "lucide-react";
 import Link from "next/link";
-import Navbar from "@/app/components/Navbar";
 import Aside from "@/app/components/Aside";
 import { useAllAssets, type ChainAsset, ArchiveType } from "@/hooks/useVeraLayer";
+import UserNavbar from "@/app/components/UserNavbar";
 
 const BERYX_ADDR = "https://beryx.io/fil/calibration/address/";
 
@@ -187,14 +187,15 @@ export default function ArchivesPage() {
       className="min-h-screen w-full flex flex-col"
       style={{ backgroundColor: "#0A0E1A", color: "#8A919F" }}
     >
-      <Navbar />
 
       <div className="flex flex-1 overflow-hidden">
         <Aside />
 
         <main className="flex-1 overflow-auto p-6">
           {/* Header */}
-          <div className="flex items-start justify-between gap-4 mb-6 flex-wrap">
+          <UserNavbar />
+
+          <div className="flex items-start justify-between gap-4 mb-6 mt-10 flex-wrap">
             <div>
               <p className="text-[9px] uppercase tracking-widest mb-2" style={{ color: "#8A919F" }}>
                 VERALAYER · LIVE REGISTRY
@@ -277,7 +278,7 @@ export default function ArchivesPage() {
             ) : filtered.length === 0 ? (
               <EmptyState />
             ) : (
-              filtered.map((asset) => (
+              filtered.map((asset:any) => (
                 <AssetCard key={asset.id.toString()} asset={asset} />
               ))
             )}
