@@ -2,10 +2,6 @@
 
 import { useState } from "react";
 import {
-  LayoutDashboard,
-  Upload,
-  Archive,
-  Settings,
   Search,
   Star,
   GitBranch,
@@ -15,13 +11,9 @@ import {
 import Link from "next/link";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 import Aside from "@/app/components/Aside";
+import UserNavbar from "@/app/components/UserNavbar";
 
-const SIDEBAR_NAV = [
-  { icon: <LayoutDashboard size={13} />, label: "Dashboard", href: "#" },
-  { icon: <Upload size={13} />, label: "My Uploads", href: "#" },
-  { icon: <Archive size={13} />, label: "Heritage Assets", href: "#", active: true },
-  { icon: <Settings size={13} />, label: "Settings", href: "#" },
-];
+
 
 const FILTER_TABS = [
   "All Assets",
@@ -109,22 +101,7 @@ export default function HeritageAssetsPage() {
           className="flex items-center justify-between px-6 py-3 border-b"
           style={{ borderColor: "rgba(255,255,255,0.06)" }}
         >
-          <div className="flex items-center gap-5">
-            {["Archive", "Heritage", "Explore"].map((l) => (
-              <a
-                key={l}
-                href="#"
-                className="text-xs transition-opacity hover:opacity-70"
-                style={{
-                  color: l === "Heritage" ? "#DFE2F3" : "#8A919F",
-                  textDecoration: l === "Heritage" ? "underline" : "none",
-                  textUnderlineOffset: "4px",
-                }}
-              >
-                {l}
-              </a>
-            ))}
-          </div>
+          <UserNavbar />
           <ConnectButton chainStatus="icon" showBalance={false} label="Connect Wallet" />
         </div>
 

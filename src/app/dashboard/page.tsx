@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import { Settings, Upload } from "lucide-react";
 import Aside from "../components/Aside";
+import UserNavbar from "../components/UserNavbar";
 
 
 const ARCHIVE_TIERS = [
@@ -59,14 +60,16 @@ export default function DashboardPage() {
 
   return (
     <div
-      className="min-h-screen flex"
+      className="min-h-screen grid grid-cols-12" 
       style={{ backgroundColor: "#0A0E1A", color: "#8A919F" }}
     >
       {/* Sidebar */}
+      <div className="col-span-2 border-r" style={{ borderColor: "rgba(255,255,255,0.07)" }}> 
       <Aside />
-
+      </div>
       {/* Main */}
-      <main className="flex-1 p-6 flex flex-col gap-5 max-w-2xl">
+      <main className="flex-1 p-6 flex flex-col gap-5 col-span-10">
+      <UserNavbar />
 
         {/* Archive Tier Selector */}
         <div>
