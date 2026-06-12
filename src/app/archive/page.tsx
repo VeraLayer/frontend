@@ -1,7 +1,11 @@
 "use client";
 
 import { CheckCircle2, ExternalLink, Shield } from "lucide-react";
+<<<<<<< HEAD
 import Navbar from "../components/Navbar";
+=======
+import Navbar from "@/app/components/Navbar";
+>>>>>>> origin
 
 const ARCHIVE_CARDS = [
   {
@@ -59,6 +63,7 @@ export default function ArchivePage() {
       className="min-h-screen w-full"
       style={{ backgroundColor: "#0A0E1A", color: "#8A919F" }}
     >
+      <Navbar />
       <div className="max-w-4xl mx-auto px-5 py-8">
 
         {/* Breadcrumb */}

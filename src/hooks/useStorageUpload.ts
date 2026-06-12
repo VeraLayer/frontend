@@ -49,7 +49,7 @@ export function useStorageUpload() {
       if (!cid) throw new Error("Lighthouse returned no CID");
 
       setUploadStatus("Stored ✓");
-      return { cid, dealId: "", size, dealActive: true };
+      return { cid, dealId: cid, size, dealActive: true };
 
     } catch (e: unknown) {
       const err = e instanceof Error ? e : new Error(String(e));
