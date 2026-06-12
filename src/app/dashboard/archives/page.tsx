@@ -26,6 +26,7 @@ function AssetCard({ asset }: { asset: ChainAsset }) {
     month: "short",
     year: "numeric",
   });
+  const ipfsUrl = asset.dealId ? `/api/ipfs/${asset.dealId}` : null;
 
   return (
     <div
@@ -37,6 +38,21 @@ function AssetCard({ asset }: { asset: ChainAsset }) {
           : "rgba(255,255,255,0.07)",
       }}
     >
+      {/* Image thumbnail */}
+      {ipfsUrl && (
+        <div
+          className="w-full rounded-lg overflow-hidden -mx-0"
+          style={{ height: "80px", backgroundColor: "rgba(255,255,255,0.03)" }}
+        >
+          <img
+            src={ipfsUrl}
+            alt="Archive content"
+            className="w-full h-full object-cover"
+            onError={(e) => { (e.currentTarget as HTMLImageElement).parentElement!.style.display = "none"; }}
+          />
+        </div>
+      )}
+
       {/* Top row: type badge + date */}
       <div className="flex items-center justify-between">
         <span
@@ -159,13 +175,12 @@ function EmptyState() {
 
 export default function ArchivesPage() {
   const [filter, setFilter] = useState<Filter>("all");
-  const { assets, isLoading, count, talentCount, heritageCount } = useAllAssets();
+  const { assets, talentAssets, heritageAssets, isLoading, count, talentCount, heritageCount } = useAllAssets();
 
-  const filtered = assets.filter((a) => {
-    if (filter === "talent") return a.archiveType === ArchiveType.Talent;
-    if (filter === "heritage") return a.archiveType === ArchiveType.Heritage;
-    return true;
-  });
+  const filtered =
+    filter === "talent"  ? talentAssets  :
+    filter === "heritage"? heritageAssets:
+    assets;
 
   return (
     <div

@@ -1,6 +1,7 @@
 "use client";
 
 import { Shield, Archive, Database } from "lucide-react";
+import Link from "next/link";
 
 export default function FeaturesSection() {
   return (
@@ -201,12 +202,13 @@ export default function FeaturesSection() {
               Start preserving your critical data with VeraLayer today.
             </p>
           </div>
-          <button
-            className="w-full mt-4 py-2 rounded-md text-xs font-semibold transition-opacity hover:opacity-90"
+          <Link
+            href="/dashboard/upload"
+            className="w-full mt-4 py-2 rounded-md text-xs font-semibold transition-opacity hover:opacity-90 block text-center"
             style={{ backgroundColor: "#002A52", color: "#A4C9FF" }}
           >
             Begin New Upload
-          </button>
+          </Link>
         </div>
         </div>
       </div>
