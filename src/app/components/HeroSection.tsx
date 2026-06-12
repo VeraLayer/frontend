@@ -2,12 +2,19 @@
 
 import { useState } from "react";
 import { Search } from "lucide-react";
+import { useRouter } from "next/navigation";
 import Navbar from "./Navbar";
 import { useAssetsCount } from "@/hooks/useVeraLayer";
 
 export default function HeroSection() {
   const [query, setQuery] = useState("");
+  const router = useRouter();
   const { count, isLoading: countLoading } = useAssetsCount();
+
+  function handleSearch(e: React.FormEvent) {
+    e.preventDefault();
+    router.push("/dashboard/archives");
+  }
 
   const STATS = [
     {
@@ -64,7 +71,8 @@ export default function HeroSection() {
         </p>
 
         {/* Search bar */}
-        <div
+        <form
+          onSubmit={handleSearch}
           className="flex items-center w-full max-w-md rounded-md border px-3 py-2 gap-2 mb-14"
           style={{
             borderColor: "rgba(138, 145, 159, 0.25)",
@@ -74,14 +82,15 @@ export default function HeroSection() {
           <Search size={14} style={{ color: "#8A919F" }} />
           <input
             type="text"
-            placeholder="Search by CID, name, or category..."
+            placeholder="Search archives…"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             className="flex-1 bg-transparent text-xs outline-none placeholder:opacity-50"
             style={{ color: "#DFE2F3" }}
           />
           <button
-            className="text-xs px-3 py-1 rounded"
+            type="submit"
+            className="text-xs px-3 py-1 rounded transition-opacity hover:opacity-80"
             style={{
               backgroundColor: "rgba(164, 201, 255, 0.12)",
               color: "#A4C9FF",
@@ -89,7 +98,7 @@ export default function HeroSection() {
           >
             ⌘F
           </button>
-        </div>
+        </form>
 
         {/* Stats */}
         <div className="flex flex-wrap items-center justify-center gap-12">

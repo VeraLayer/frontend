@@ -17,8 +17,10 @@ import { useAccount } from "wagmi";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 import Aside from "@/app/components/Aside";
 import Navbar from "@/app/components/Navbar";
+import { PaymentPanel } from "@/app/components/PaymentPanel";
 import { useArchiveData, ArchiveType } from "@/hooks/useVeraLayer";
 import { useStorageUpload } from "@/hooks/useStorageUpload";
+import { useSynapse } from "@/hooks/useSynapse";
 import { toast } from "@/lib/toast";
 
 const FILE_TYPES = [
@@ -44,6 +46,7 @@ function UploadAssetsPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { isConnected, chainId } = useAccount();
+  const { synapse, initializing, initError } = useSynapse();
   const { upload, uploading, uploadStatus, uploadError, commitWarning } = useStorageUpload();
   const { archive, txHash, isPending, isConfirming, isSuccess, error: archiveError } = useArchiveData();
 
@@ -402,6 +405,8 @@ function UploadAssetsPage() {
 
           {/* ── Right column ─────────────────────────────────────── */}
           <div className="w-56 flex-shrink-0 flex flex-col gap-4">
+            {/* Filecoin Pay */}
+            <PaymentPanel synapse={synapse} initializing={initializing} initError={initError} />
             {/* Sovereignty Status */}
             <div
               className="rounded-xl p-4 border"
