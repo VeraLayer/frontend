@@ -2,14 +2,9 @@
 
 import { useState } from "react";
 import {
-  LayoutDashboard,
-  BarChart2,
   FileStack,
-  Users,
   Landmark,
   Clock,
-  Flag,
-  Monitor,
   Settings,
   Bell,
   Rss,
@@ -21,68 +16,12 @@ import {
   Cloud,
   Shield,
   MoreHorizontal,
-  LogOut,
   Diamond,
+  Loader2,
+  ExternalLink,
 } from "lucide-react";
-import Link from "next/link";
 import AdminSidebar from "../components/AdminSidebar";
-
-// ── Sidebar nav ──────────────────────────────────────────────────────────────
-
-
-// ── Stat cards ───────────────────────────────────────────────────────────────
-const STAT_CARDS = [
-  {
-    label: "TOTAL ASSETS",
-    value: "12,847",
-    delta: "+143",
-    deltaColor: "#4AE183",
-    icon: <FileStack size={16} />,
-    iconColor: "#A4C9FF",
-    highlight: false,
-  },
-  {
-    label: "HERITAGE ITEMS",
-    value: "3,291",
-    delta: "+28",
-    deltaColor: "#FFB955",
-    icon: <Landmark size={16} />,
-    iconColor: "#FFB955",
-    highlight: true,
-  },
-  {
-    label: "ACTIVE DEALS",
-    value: "9,102",
-    delta: "LIVE",
-    deltaColor: "#4AE183",
-    icon: <Diamond size={16} />,
-    iconColor: "#A4C9FF",
-    highlight: false,
-  },
-  {
-    label: "PENDING REVIEWS",
-    value: "47",
-    delta: "CRITICAL",
-    deltaColor: "#FF6B6B",
-    icon: <Clock size={16} />,
-    iconColor: "#FFB955",
-    highlight: false,
-  },
-];
-
-// ── Submissions table ─────────────────────────────────────────────────────────
-const SUBMISSIONS = [
-  { title: "Benin Bronze Scans",       type: "Heritage",   wallet: "0x3f...921", cid: "QmX7...2b1", status: "VERIFIED", date: "Oct 24" },
-  { title: "Nok Terracotta 3D",        type: "Artifact",   wallet: "0xa2...77c", cid: "QmP4...9k0", status: "PENDING",  date: "Oct 24" },
-  { title: "Kente Weaving Patterns",   type: "Textile",    wallet: "0x11...e45", cid: "QmL2...fv8", status: "VERIFIED", date: "Oct 23" },
-  { title: "Adire Master Collection",  type: "Heritage",   wallet: "0x98...aa2", cid: "QmK9...3d2", status: "VERIFIED", date: "Oct 23" },
-  { title: "Yoruba Oral Archive",      type: "Audio",      wallet: "0xbc...121", cid: "QmW1...4f6", status: "FLAGGED",  date: "Oct 22" },
-  { title: "Lagos Modernist Maps",     type: "Document",   wallet: "0x55...343", cid: "QmZ3...8y9", status: "VERIFIED", date: "Oct 22" },
-  { title: "Oyo Empire Ledger",        type: "Manuscript", wallet: "0x7a...bb0", cid: "QmA8...7c1", status: "PENDING",  date: "Oct 21" },
-  { title: "Igbo Ukwu Bronzes",        type: "Artifact",   wallet: "0x22...f1a", cid: "QmE0...5t3", status: "VERIFIED", date: "Oct 21" },
-  { title: "Historical Genealogies",   type: "Registry",   wallet: "0xdd...44e", cid: "QmR5...1q2", status: "VERIFIED", date: "Oct 20" },
-  { title: "Coastal Trade Route",      type: "Map",        wallet: "0x66...cc9", cid: "QmN1...9p0", status: "VERIFIED", date: "Oct 20" },
-];
+import { useAllAssets, ArchiveType } from "@/hooks/useVeraLayer";
 
 const STATUS_STYLES: Record<string, { bg: string; color: string }> = {
   VERIFIED: { bg: "rgba(74,225,131,0.12)",  color: "#4AE183" },
@@ -90,7 +29,8 @@ const STATUS_STYLES: Record<string, { bg: string; color: string }> = {
   FLAGGED:  { bg: "rgba(255,107,107,0.12)", color: "#FF6B6B" },
 };
 
-// ── Bar chart data (7 days) ───────────────────────────────────────────────────
+const BERYX_ADDR = "https://beryx.io/fil/calibration/address/";
+
 const BAR_DATA = [
   { day: "MON", standard: 60, heritage: 30 },
   { day: "TUE", standard: 75, heritage: 45 },
@@ -101,16 +41,72 @@ const BAR_DATA = [
   { day: "SUN", standard: 70, heritage: 40 },
 ];
 
-// ── On-chain health ───────────────────────────────────────────────────────────
 const HEALTH_ITEMS = [
   { icon: <FileCode2 size={18} />, label: "SMART CONTRACT", value: "ACTIVE | V3.2.1" },
-  { icon: <History size={18} />,   label: "LAST TRANSACTION", value: "2.4m AGO | 0x3d...ef1" },
+  { icon: <History size={18} />,   label: "LAST TRANSACTION", value: "CALIBRATION TESTNET" },
   { icon: <Cloud size={18} />,     label: "FILECOIN NETWORK", value: "ONLINE | CALIBRATION" },
   { icon: <Shield size={18} />,    label: "API PROXY STATUS", value: "SECURE | TLS 1.3" },
 ];
 
+function shortAddr(addr: string) {
+  return `${addr.slice(0, 6)}…${addr.slice(-4)}`;
+}
+
+function shortCid(cid: string) {
+  return `${cid.slice(0, 8)}…${cid.slice(-4)}`;
+}
+
 export default function AdminDashboardPage() {
   const [searchQuery, setSearchQuery] = useState("");
+  const { assets, isLoading, count, talentCount, heritageCount } = useAllAssets();
+
+  const filteredAssets = searchQuery
+    ? assets.filter(
+        (a) =>
+          a.creator.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          a.dealId.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          a.id.toString().includes(searchQuery)
+      )
+    : assets.slice(0, 10);
+
+  const STAT_CARDS = [
+    {
+      label: "TOTAL ASSETS",
+      value: isLoading ? "—" : count.toLocaleString(),
+      delta: `${talentCount} Talent`,
+      deltaColor: "#4AE183",
+      icon: <FileStack size={16} />,
+      iconColor: "#A4C9FF",
+      highlight: false,
+    },
+    {
+      label: "HERITAGE ITEMS",
+      value: isLoading ? "—" : heritageCount.toLocaleString(),
+      delta: "On-Chain",
+      deltaColor: "#FFB955",
+      icon: <Landmark size={16} />,
+      iconColor: "#FFB955",
+      highlight: true,
+    },
+    {
+      label: "ACTIVE DEALS",
+      value: isLoading ? "—" : count.toLocaleString(),
+      delta: "LIVE",
+      deltaColor: "#4AE183",
+      icon: <Diamond size={16} />,
+      iconColor: "#A4C9FF",
+      highlight: false,
+    },
+    {
+      label: "TALENT ARCHIVES",
+      value: isLoading ? "—" : talentCount.toLocaleString(),
+      delta: "3MTT",
+      deltaColor: "#A4C9FF",
+      icon: <Clock size={16} />,
+      iconColor: "#A4C9FF",
+      highlight: false,
+    },
+  ];
 
   return (
     <div
@@ -282,55 +278,73 @@ export default function AdminDashboardPage() {
               </div>
 
               {/* Rows */}
-              {SUBMISSIONS.map((row, i) => (
-                <div
-                  key={i}
-                  className="grid px-5 py-3 border-b items-center transition-colors hover:bg-white/[0.02]"
-                  style={{
-                    gridTemplateColumns: "2fr 1fr 1fr 1fr 1fr 1fr 0.5fr",
-                    borderColor: "rgba(255,255,255,0.04)",
-                  }}
-                >
-                  <p className="text-xs font-medium" style={{ color: "#DFE2F3" }}>
-                    {row.title}
-                  </p>
-                  <span
-                    className="text-[10px] px-2 py-0.5 rounded w-fit"
-                    style={{
-                      backgroundColor: "rgba(255,255,255,0.06)",
-                      color: "#C0C7D6",
-                    }}
-                  >
-                    {row.type}
-                  </span>
-                  <p className="text-[10px] font-mono" style={{ color: "#8A919F" }}>
-                    {row.wallet}
-                  </p>
-                  <p
-                    className="text-[10px] font-mono cursor-pointer transition-opacity hover:opacity-70"
-                    style={{ color: "#1A92FF" }}
-                  >
-                    {row.cid}
-                  </p>
-                  <span
-                    className="text-[9px] px-2 py-0.5 rounded-full w-fit flex items-center gap-1"
-                    style={{
-                      backgroundColor: STATUS_STYLES[row.status].bg,
-                      color: STATUS_STYLES[row.status].color,
-                    }}
-                  >
-                    <span
-                      className="w-1 h-1 rounded-full"
-                      style={{ backgroundColor: STATUS_STYLES[row.status].color }}
-                    />
-                    {row.status}
-                  </span>
-                  <p className="text-[10px]" style={{ color: "#8A919F" }}>{row.date}</p>
-                  <button className="transition-opacity hover:opacity-70" style={{ color: "#8A919F" }}>
-                    <MoreHorizontal size={14} />
-                  </button>
+              {isLoading ? (
+                <div className="flex items-center gap-2 justify-center py-8">
+                  <Loader2 size={14} className="animate-spin" style={{ color: "#1A92FF" }} />
+                  <p className="text-xs" style={{ color: "#8A919F" }}>Loading on-chain data…</p>
                 </div>
-              ))}
+              ) : filteredAssets.length === 0 ? (
+                <p className="text-xs text-center py-8" style={{ color: "#8A919F" }}>No archives found.</p>
+              ) : filteredAssets.map((row) => {
+                const isHeritage = row.archiveType === ArchiveType.Heritage;
+                const date = new Date(Number(row.createdAt) * 1000).toLocaleDateString("en-GB", { day: "numeric", month: "short" });
+                const status = row.revoked ? "FLAGGED" : row.verifiedBy !== "0x0000000000000000000000000000000000000000" ? "VERIFIED" : "PENDING";
+                return (
+                  <div
+                    key={row.id.toString()}
+                    className="grid px-5 py-3 border-b items-center transition-colors hover:bg-white/[0.02]"
+                    style={{
+                      gridTemplateColumns: "2fr 1fr 1fr 1fr 1fr 1fr 0.5fr",
+                      borderColor: "rgba(255,255,255,0.04)",
+                    }}
+                  >
+                    <p className="text-xs font-medium font-mono" style={{ color: "#DFE2F3" }}>
+                      Archive #{row.id.toString()}
+                    </p>
+                    <span
+                      className="text-[10px] px-2 py-0.5 rounded w-fit"
+                      style={{
+                        backgroundColor: isHeritage ? "rgba(255,185,85,0.12)" : "rgba(164,201,255,0.12)",
+                        color: isHeritage ? "#FFB955" : "#A4C9FF",
+                      }}
+                    >
+                      {isHeritage ? "Heritage" : "Talent"}
+                    </span>
+                    <a
+                      href={`${BERYX_ADDR}${row.creator}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-[10px] font-mono transition-opacity hover:opacity-70"
+                      style={{ color: "#8A919F" }}
+                    >
+                      {shortAddr(row.creator)}
+                    </a>
+                    <a
+                      href={`https://ipfs.io/ipfs/${row.dealId}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-0.5 text-[10px] font-mono transition-opacity hover:opacity-70"
+                      style={{ color: "#1A92FF" }}
+                    >
+                      {shortCid(row.dealId)} <ExternalLink size={8} />
+                    </a>
+                    <span
+                      className="text-[9px] px-2 py-0.5 rounded-full w-fit flex items-center gap-1"
+                      style={{
+                        backgroundColor: STATUS_STYLES[status].bg,
+                        color: STATUS_STYLES[status].color,
+                      }}
+                    >
+                      <span className="w-1 h-1 rounded-full" style={{ backgroundColor: STATUS_STYLES[status].color }} />
+                      {status}
+                    </span>
+                    <p className="text-[10px]" style={{ color: "#8A919F" }}>{date}</p>
+                    <button className="transition-opacity hover:opacity-70" style={{ color: "#8A919F" }}>
+                      <MoreHorizontal size={14} />
+                    </button>
+                  </div>
+                );
+              })}
             </div>
 
             {/* Right column: chart + storage */}
