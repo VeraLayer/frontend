@@ -25,7 +25,8 @@ import { useSynapse } from "@/hooks/useSynapse";
 import { ArchiveType, VERALAYER_ABI, VERALAYER_ADDRESS } from "@/lib/veralayer-abi";
 import { toast } from "@/lib/toast";
 import { PaymentPanel } from "@/app/components/PaymentPanel";
-import { ChainAsset } from "@/hooks/useVeraLayer";
+import { useArchiveData, type ChainAsset } from "@/hooks/useVeraLayer";
+import { useStorageUpload } from "@/hooks/useStorageUpload";
 
 
 const SIDEBAR_NAV = [
