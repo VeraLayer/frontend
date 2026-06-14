@@ -25,7 +25,9 @@ import { useSynapse } from "@/hooks/useSynapse";
 import { ArchiveType, VERALAYER_ABI, VERALAYER_ADDRESS } from "@/lib/veralayer-abi";
 import { toast } from "@/lib/toast";
 import { PaymentPanel } from "@/app/components/PaymentPanel";
-import { ChainAsset } from "@/hooks/useVeraLayer";
+import { ChainAsset, useArchiveData } from "@/hooks/useVeraLayer";
+import { useStorageUpload } from "@/hooks/useStorageUpload";
+import UserNavbar from "@/app/components/UserNavbar";
 
 
 const SIDEBAR_NAV = [
@@ -222,28 +224,7 @@ export default function HeritageAssetsPage() {
 
       <main className="flex-1 overflow-auto">
         {/* Top nav */}
-        <div
-          className="flex items-center justify-between px-6 py-3 border-b"
-          style={{ borderColor: "rgba(255,255,255,0.06)" }}
-        >
-          <div className="flex items-center gap-5">
-            {["Archive", "Heritage", "Explore"].map((l) => (
-              <a
-                key={l}
-                href="#"
-                className="text-xs transition-opacity hover:opacity-70"
-                style={{
-                  color: l === "Heritage" ? "#DFE2F3" : "#8A919F",
-                  textDecoration: l === "Heritage" ? "underline" : "none",
-                  textUnderlineOffset: "4px",
-                }}
-              >
-                {l}
-              </a>
-            ))}
-          </div>
-          <ConnectButton chainStatus="icon" showBalance={false} label="Connect Wallet" />
-        </div>
+       <UserNavbar />
 
         <div className="p-6">
           <p className="text-[9px] uppercase tracking-widest mb-3" style={{ color: "#8A919F" }}>PROFESSIONAL ARCHIVE</p>

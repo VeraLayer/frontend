@@ -7,10 +7,10 @@ import { useAccount, useReadContract } from "wagmi";
 import { VERALAYER_ABI, VERALAYER_ADDRESS } from "@/lib/veralayer-abi";
 
 const SIDEBAR_NAV = [
-  { icon: <LayoutDashboard size={13} />, label: "Dashboard",    href: "/dashboard" },
-  { icon: <Archive size={13} />,         label: "All Archives", href: "/dashboard/archives" },
-  { icon: <FolderOpen size={13} />,      label: "Heritage",     href: "/dashboard/heritage" },
-  { icon: <Upload size={13} />,          label: "Upload",       href: "/dashboard/upload" },
+  { icon: <LayoutDashboard size={13} />, label: "Dashboard",    href: "/dashboard", active: true },
+  { icon: <Archive size={13} />,         label: "All Archives", href: "/dashboard/archives", active: false },
+  { icon: <FolderOpen size={13} />,      label: "Heritage",     href: "/dashboard/heritage", active: false },
+  { icon: <Upload size={13} />,          label: "Upload",       href: "/dashboard/upload", active:false },
 ];
 
 export default function Aside() {
@@ -58,7 +58,7 @@ export default function Aside() {
 
   return (
     <aside
-      className="w-52 flex-shrink-0 flex flex-col justify-between border-r py-5 px-4"
+      className="col-span-2 flex-shrink-0 flex flex-col justify-between border-r py-5 px-4"
       style={{ borderColor: "rgba(255,255,255,0.06)" }}
     >
       <div>
@@ -172,31 +172,7 @@ export default function Aside() {
             </Link>
           ))}
         </div>
-          <p
-            className="text-[9px] uppercase tracking-widest mb-2"
-            style={{ color: "#8A919F" }}
-          >
-            Navigate
-          </p>
-        <div className="flex flex-col gap-0.5">
-          {SIDEBAR_NAV.map(({ icon, label, href }) => {
-            const active = pathname === href;
-            return (
-              <Link
-                key={label}
-                href={href}
-                className="flex items-center gap-2 px-2.5 py-2 rounded-md text-xs transition-colors"
-                style={{
-                  backgroundColor: active ? "rgba(26,146,255,0.12)" : "transparent",
-                  color: active ? "#A4C9FF" : "#8A919F",
-                }}
-              >
-                {icon}
-                {label}
-              </Link>
-            );
-          })}
-        </div>
+         
       </div>
 
       {/* New Archive CTA */}

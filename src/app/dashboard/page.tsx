@@ -9,6 +9,7 @@ import { useAccount } from "wagmi";
 import { useStorageUpload } from "@/hooks/useStorageUpload";
 import { useArchiveData } from "@/hooks/useVeraLayer";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
+import UserNavbar from "../components/UserNavbar";
 
 
 const ARCHIVE_TIERS = [
@@ -83,9 +84,10 @@ export default function DashboardPage() {
       <Aside />
 
       {/* Main */}
-      <main className="flex-1 p-6 flex flex-col gap-5 max-w-2xl">
+      <main className="col-span-10 flex-1 p-6 flex flex-col gap-5">
 
         {/* Archive Tier Selector */}
+        <UserNavbar />
         <div>
           <p
             className="text-[9px] uppercase tracking-widest mb-3 font-medium"
