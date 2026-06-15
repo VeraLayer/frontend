@@ -1,8 +1,8 @@
 "use client";
 
-import { useWriteContract, useReadContract, useWaitForTransactionReceipt } from "wagmi";
+import { useState } from "react";
+import { useWriteContract, useReadContract, useWaitForTransactionReceipt, usePublicClient } from "wagmi";
 import { VERALAYER_ABI, VERALAYER_ADDRESS, ArchiveType } from "@/lib/veralayer-abi";
-import { usePublicClient } from "wagmi";
 
 export { ArchiveType };
 
@@ -42,13 +42,15 @@ function mapAssets(raw: unknown): ChainAsset[] {
 
 export function useArchiveData() {
   const publicClient = usePublicClient();
-  const { writeContract, data: txHash, isPending, error } = useWriteContract();
+  const [simError, setSimError] = useState<Error | null>(null);
+  const { writeContract, data: txHash, isPending, error: writeError } = useWriteContract();
   const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({
     hash: txHash,
     pollingInterval: 4_000,
   });
 
   async function archive(params: ArchiveParams) {
+    setSimError(null);
     try {
       await publicClient?.simulateContract({
         address: VERALAYER_ADDRESS,
@@ -56,11 +58,10 @@ export function useArchiveData() {
         functionName: "archiveData",
         args: [params.cid, params.dealId, params.archiveType],
       });
-    } catch (simErr) {
-      console.error("Simulate revert:", simErr);
-      throw simErr; // let the caller's error state catch it
+    } catch (e) {
+      setSimError(e instanceof Error ? e : new Error(String(e)));
+      return;
     }
-
     writeContract({
       address: VERALAYER_ADDRESS,
       abi: VERALAYER_ABI,
@@ -69,7 +70,7 @@ export function useArchiveData() {
     });
   }
 
-  return { archive, txHash, isPending, isConfirming, isSuccess, error };
+  return { archive, txHash, isPending, isConfirming, isSuccess, error: writeError ?? simError };
 }
 
 export function useArchiveCount() {
