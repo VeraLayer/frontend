@@ -120,7 +120,7 @@ export default function FeaturesSection() {
         </div>
 
 
-        <div className="md:col-span-3 rounded-xl p-5 flex flex-row gap-5 justify-between">
+        <div className="md:col-span-3 rounded-xl p-5 flex flex-col lg:flex-row gap-5 justify-between">
         {/* Card 3 — Proof of Storage (bottom left) */}
         <div
           className="md:col-span-1 rounded-xl p-5 flex flex-col justify-between min-h-[130px]"

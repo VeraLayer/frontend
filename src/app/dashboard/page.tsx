@@ -77,14 +77,16 @@ export default function DashboardPage() {
 
   return (
     <div
-      className="min-h-screen grid grid-cols-12" 
+      className="min-h-screen flex flex-col md:grid md:grid-cols-12" 
       style={{ backgroundColor: "#0A0E1A", color: "#8A919F" }}
     >
       {/* Sidebar */}
-      <Aside />
+        <div className="hidden md:block md:col-span-2">
+        <Aside />
+      </div>
 
       {/* Main */}
-      <main className="col-span-10 flex-1 p-6 flex flex-col gap-5">
+      <main className="flex-1 md:col-span-10 p-4 md:p-6 flex flex-col gap-4 md:gap-5 pb-24 md:pb-6">
 
         {/* Archive Tier Selector */}
         <UserNavbar />

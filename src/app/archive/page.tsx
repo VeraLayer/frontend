@@ -54,7 +54,6 @@ const STATS = [
 export default function ArchivePage() {
   return (
     <>
-    <Navbar />
     <div
       className="min-h-screen w-full"
       style={{ backgroundColor: "#0A0E1A", color: "#8A919F" }}
