@@ -13,7 +13,11 @@ const SIDEBAR_NAV = [
   { icon: <Upload size={13} />,          label: "Upload",       href: "/dashboard/upload", active:false },
 ];
 
-export default function Aside() {
+interface AsideProps {
+  mobile?: boolean;
+}
+
+export default function Aside({ mobile = false }: AsideProps) {
   const pathname   = usePathname();
   const { address, isConnected } = useAccount();
 
@@ -55,6 +59,45 @@ export default function Aside() {
   const shortAddr  = address
     ? `${address.slice(0, 6)}…${address.slice(-4)}`
     : "Not connected";
+
+     if (mobile) {
+    return (
+      <nav className="flex items-center justify-around px-2 py-2">
+        {SIDEBAR_NAV.map(({ icon: Icon, label, href }) => {
+          const isActive = pathname === href || (href !== "/dashboard" && pathname?.startsWith(href));
+          return (
+            <Link
+              key={href}
+              href={href}
+              className="flex flex-col items-center gap-1 px-3 py-1.5 rounded-lg transition-colors"
+              style={{
+                color: isActive ? "#A4C9FF" : "#8A919F",
+                backgroundColor: isActive ? "rgba(26,146,255,0.1)" : "transparent",
+              }}
+            >
+              {Icon}
+              <span className="text-[9px] font-medium tracking-wide">{label}</span>
+            </Link>
+          );
+        })}
+
+        {/* New Archive as a "+" tab */}
+        <Link
+          href="/dashboard/upload"
+          className="flex flex-col items-center gap-1 px-3 py-1.5 rounded-lg transition-colors"
+          style={{ color: "#1A92FF" }}
+        >
+          <div
+            className="w-7 h-7 rounded-full flex items-center justify-center"
+            style={{ backgroundColor: "rgba(26,146,255,0.15)" }}
+          >
+            <Plus size={15} style={{ color: "#1A92FF" }} />
+          </div>
+          <span className="text-[9px] font-medium tracking-wide">New</span>
+        </Link>
+      </nav>
+    );
+  }
 
   return (
     <aside
