@@ -5,6 +5,7 @@ import Link from "next/link";
 
 const NAV_LINKS = [
   { label: "Archive", href: "/archive" },
+  {label:"Datasets", href:"/dataset"},
   { label: "Registry", href: "/dashboard/archives" },
   { label: "Heritage", href: "/dashboard/heritage" },
   { label: "Upload", href: "/dashboard/upload" },
