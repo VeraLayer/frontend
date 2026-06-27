@@ -1,3 +1,5 @@
+"use client";
+
 import { ArchiveCounts, ArchiveSummary, HealthStatus } from "@/interface";
 import { useCallback, useEffect, useState } from "react";
 import { veraLayerApi } from "../api/veralayer.api";
@@ -6,6 +8,8 @@ import CountCards from "../components/CountCards";
 import AIQueryPanel from "../components/AIQueryPanel";
 import ArchiveRow from "../components/ArchiveRow";
 import ArchiveDetailPanel from "../components/ArchiveDetailPanel";
+import Navbar from "../components/Navbar";
+import FooterSection from "../components/FooterSection";
 
 type FilterType = "all" | "talent" | "heritage" | "datasets";
  
@@ -64,6 +68,8 @@ export default function Dataset() {
   ];
  
   return (
+    <>
+    <Navbar/>
     <div
       style={{
         minHeight: "100vh",
@@ -240,5 +246,7 @@ export default function Dataset() {
         <ArchiveDetailPanel id={selectedId} onClose={() => setSelectedId(null)} />
       )}
     </div>
+    <FooterSection/>
+    </>
   );
 }
