@@ -4,6 +4,7 @@ import { ConnectButton } from "@rainbow-me/rainbowkit";
 import Link from "next/link";
 
 const NAV_LINKS = [
+  {label:"Home", href:"/"},
   { label: "Archive", href: "/archive" },
   {label:"Datasets", href:"/dataset"},
   { label: "Registry", href: "/dashboard/archives" },

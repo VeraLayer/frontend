@@ -1,3 +1,5 @@
+"use client";
+
 import { ARCHIVE_TYPE_COLOR, ARCHIVE_TYPE_LABEL, shortAddr, tsToDate } from "@/helpers";
 import { ArchiveDetail } from "@/interface";
 import { useEffect, useState } from "react";
